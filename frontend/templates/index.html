@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cognitive Digital Twin - Cinematic Landing Page</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#93000a",
+                        "secondary-container": "#45501f",
+                        "secondary-fixed-dim": "#bfcd8f",
+                        "secondary-fixed": "#dbe9a9",
+                        "error": "#ffb4ab",
+                        "on-error": "#690005",
+                        "surface-bright": "#373a33",
+                        "on-primary": "#2f312c",
+                        "surface-dim": "#11140e",
+                        "outline": "#90918b",
+                        "tertiary-fixed": "#f4dfcb",
+                        "on-primary-fixed": "#1a1c18",
+                        "surface-container-highest": "#33362f",
+                        "primary-fixed-dim": "#c6c7c0",
+                        "surface": "#11140e",
+                        "on-secondary": "#2a3406",
+                        "tertiary-container": "#1a1106",
+                        "on-surface-variant": "#c6c7c0",
+                        "on-primary-container": "#7d7e78",
+                        "tertiary-fixed-dim": "#d7c3b0",
+                        "surface-container-high": "#282b24",
+                        "tertiary": "#d7c3b0",
+                        "on-secondary-container": "#b4c285",
+                        "surface-variant": "#33362f",
+                        "primary": "#c6c7c0",
+                        "primary-container": "#11130f",
+                        "on-tertiary-container": "#8c7b6a",
+                        "outline-variant": "#454742",
+                        "inverse-surface": "#e2e3d9",
+                        "surface-container-low": "#1a1d16",
+                        "on-surface": "#e2e3d9",
+                        "on-tertiary-fixed": "#241a0e",
+                        "on-secondary-fixed": "#171e00",
+                        "on-tertiary-fixed-variant": "#524436",
+                        "on-primary-fixed-variant": "#464742",
+                        "on-secondary-fixed-variant": "#404b1b",
+                        "secondary": "#bfcd8f",
+                        "surface-tint": "#c6c7c0",
+                        "primary-fixed": "#e3e3dc",
+                        "on-background": "#e2e3d9",
+                        "inverse-primary": "#5d5f59",
+                        "surface-container": "#1e211a",
+                        "surface-container-lowest": "#0c0f09",
+                        "background": "#11140e",
+                        "inverse-on-surface": "#2e312b",
+                        "on-tertiary": "#3a2e21",
+                        "on-error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-edge": "64px",
+                        "container-max": "1440px",
+                        "section-gap": "128px",
+                        "gutter": "32px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Newsreader"],
+                        "label-sm": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "headline-md": ["Newsreader"],
+                        "display-xl": ["Newsreader"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["48px", { "lineHeight": "1.2", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "1", "letterSpacing": "0.15em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "letterSpacing": "0.01em", "fontWeight": "300" }],
+                        "headline-md": ["32px", { "lineHeight": "1.3", "fontWeight": "400" }],
+                        "display-xl": ["84px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "300" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("{{ url_for('static', filename='noise.svg') }}");
+        }
+        
+        .glass-panel {
+            background: rgba(17, 20, 14, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-top: 0.5px solid rgba(215, 195, 176, 0.3);
+            border-left: 0.5px solid rgba(215, 195, 176, 0.3);
+            border-bottom: 0.5px solid rgba(44, 49, 39, 0.5);
+            border-right: 0.5px solid rgba(44, 49, 39, 0.5);
+        }
+
+        .glow-button {
+            position: relative;
+            background: #45501f;
+            box-shadow: inset 0 0 20px rgba(191, 205, 143, 0.2), 0 0 30px rgba(69, 80, 31, 0.4);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glow-button:hover {
+            box-shadow: inset 0 0 30px rgba(191, 205, 143, 0.4), 0 0 50px rgba(191, 205, 143, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .ambient-bg {
+            background: radial-gradient(circle at 50% 0%, rgba(69, 80, 31, 0.15) 0%, transparent 70%),
+                        radial-gradient(circle at 80% 80%, rgba(215, 195, 176, 0.05) 0%, transparent 50%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased min-h-screen relative overflow-x-hidden ambient-bg">
+<div class="noise-overlay"></div>
+<!-- TopAppBar -->
+<header class="fixed w-full z-50 bg-[#11130F]/40 backdrop-blur-xl docked full-width top-0 border-b border-[#D4D1C2]/10 flat no shadows hidden md:flex">
+<div class="flex justify-between items-center w-full px-12 py-6 max-w-[1440px] mx-auto">
+<div class="font-serif text-2xl italic tracking-[0.2em] text-[#D4D1C2]">
+                Cognitive Digital Twin
+            </div>
+<div class="flex items-center space-x-6">
+<!-- Navigation is handled by BottomNavBar primarily, but keeping structural flex here -->
+</div>
+<div class="flex items-center space-x-4">
+<button class="text-[#D4D1C2]/50 hover:text-[#D4D1C2] transition-colors duration-300">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="text-[#D4D1C2]/50 hover:text-[#D4D1C2] transition-colors duration-300">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="pt-[120px] pb-section-gap px-margin-edge max-w-container-max mx-auto relative z-10">
+<!-- Hero Section -->
+<section class="min-h-[calc(100vh-120px)] flex flex-col items-center justify-center text-center mb-section-gap relative">
+<!-- Floating Decorative Elements -->
+<div class="absolute w-[400px] h-[400px] bg-secondary-container/10 rounded-full blur-[100px] -top-20 -left-20"></div>
+<div class="absolute w-[300px] h-[300px] bg-tertiary/5 rounded-full blur-[80px] top-40 -right-10"></div>
+<h1 class="font-display-xl text-display-xl text-on-background max-w-4xl mx-auto mb-gutter relative z-10">
+                Your Mind Has Patterns.<br/>
+<span class="italic text-primary">Let AI Discover Them.</span>
+</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-16 relative z-10">
+                A personalized Cognitive Digital Twin designed to optimize how you learn, focus, and retain information.
+            </p>
+
+{% if current_user.is_authenticated %}
+<a href="{{ url_for('dashboard') }}" class="glow-button rounded-full px-10 py-5 flex items-center space-x-4 relative z-10 inline-flex">
+<span class="font-label-sm text-label-sm text-tertiary-fixed uppercase">Initialize Core</span>
+<span class="material-symbols-outlined text-tertiary-fixed">arrow_forward</span>
+</a>
+{% else %}
+<a href="{{ url_for('login') }}" class="glow-button rounded-full px-10 py-5 flex items-center space-x-4 relative z-10 inline-flex">
+<span class="font-label-sm text-label-sm text-tertiary-fixed uppercase">Initialize Core</span>
+<span class="material-symbols-outlined text-tertiary-fixed">arrow_forward</span>
+</a>
+{% endif %}
+
+</section>
+<!-- Bento Grid Previews -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Large Focus Analytics Card -->
+<div class="col-span-1 md:col-span-8 glass-panel rounded-xl p-8 relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-64 h-64 bg-secondary-container/20 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/4"></div>
+<div class="flex justify-between items-start mb-8 relative z-10">
+<div>
+<h3 class="font-headline-md text-headline-md text-primary mb-2">Deep Work Synthesis</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Real-time cognitive load mapping.</p>
+</div>
+<span class="material-symbols-outlined text-outline text-3xl">psychology</span>
+</div>
+<div class="h-48 w-full bg-surface-container-highest/30 rounded-lg border border-outline-variant/30 relative flex items-end p-4">
+<!-- Abstract Visualization Representation -->
+<div class="w-full flex justify-between items-end h-full gap-2 opacity-70">
+<div class="w-1/6 bg-secondary-container rounded-t-sm h-[30%]"></div>
+<div class="w-1/6 bg-secondary-container rounded-t-sm h-[50%]"></div>
+<div class="w-1/6 bg-secondary-fixed-dim rounded-t-sm h-[80%] shadow-[0_0_15px_rgba(191,205,143,0.3)]"></div>
+<div class="w-1/6 bg-secondary-container rounded-t-sm h-[40%]"></div>
+<div class="w-1/6 bg-secondary-container rounded-t-sm h-[60%]"></div>
+<div class="w-1/6 bg-secondary-container rounded-t-sm h-[20%]"></div>
+</div>
+</div>
+</div>
+<!-- Smaller Stat Card -->
+<div class="col-span-1 md:col-span-4 glass-panel rounded-xl p-8 flex flex-col justify-between relative">
+<div class="relative z-10">
+<span class="material-symbols-outlined text-secondary-fixed mb-4 text-3xl">genetics</span>
+<h3 class="font-headline-md text-headline-md text-primary mb-2">Retention Pattern</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Your ideal recall intervals identified.</p>
+</div>
+<div class="mt-8 relative z-10">
+<div class="text-5xl font-headline-lg text-tertiary-fixed mb-1">94%</div>
+<div class="font-label-sm text-label-sm text-outline tracking-widest uppercase">Optimization Match</div>
+</div>
+</div>
+<!-- Wide Visual Card -->
+<div class="col-span-1 md:col-span-12 glass-panel rounded-xl p-0 h-[300px] mt-gutter relative overflow-hidden flex items-center justify-center">
+<!-- Background Image Representation -->
+<div class="absolute inset-0 z-0 bg-cover bg-center opacity-40 mix-blend-overlay" data-alt="abstract organic liquid mesh waves flowing in deep dark greens and metallic bronze lighting" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDSLQuBocM108mImcQXyyJXUuM9vRroKwyyKUs7YRk5FwsPlfGQ5SbMwJRHCMpO1KHJDeQD2XlbHe9lVXskW_SPpS8vUxJ0kCNOmpTIpgOrhoqbIVmRY0Sl6MCp9Fw5BF9yfFsK33NtFsudW-8PdWJ1906LBPQf19VZhaqW0TKrUtFF66A2zP1pXacA0Na7gfIIIdzaDTiLuGYPYJD1tlViSltoV4ir4-luvxvJz9YL_D0WtQx6lMAN9OZ_z-IQxfVzvlXnpX9w-6no');"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50 z-10"></div>
+<div class="relative z-20 text-center max-w-2xl px-8">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-4 italic">Synchronize your intellectual rhythm.</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">CogniSync learns your circadian cognitive peaks, automating focus sessions when your mind is most receptive.</p>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-12 left-1/2 -translate-x-1/2 rounded-[40px] border-[0.5px] border-t-[#D4D1C2]/30 border-l-[#D4D1C2]/30 border-r-[#2C3127]/30 border-b-[#2C3127]/30 shadow-[0_20px_80px_rgba(0,0,0,0.6)] bg-[#11130F]/60 backdrop-blur-2xl z-50 flex items-center justify-around space-x-12 px-10 py-4 w-max md:hidden">
+<!-- Focus (Active State) -->
+<button class="flex flex-col items-center justify-center text-[#D4D1C2] drop-shadow-[0_0_10px_rgba(75,85,60,0.8)] scale-110 hover:scale-105 hover:text-[#D4D1C2] transition-all duration-500 ease-out group">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">center_focus_strong</span>
+<span class="font-sans uppercase text-[10px] tracking-[0.15em] font-light">Focus</span>
+</button>
+<!-- Synthesis -->
+<button class="flex flex-col items-center justify-center text-[#D4D1C2]/30 opacity-60 hover:scale-105 hover:text-[#D4D1C2] transition-all duration-500 ease-out group">
+<span class="material-symbols-outlined mb-1">psychology</span>
+<span class="font-sans uppercase text-[10px] tracking-[0.15em] font-light">Synthesis</span>
+</button>
+<!-- Genome -->
+<button class="flex flex-col items-center justify-center text-[#D4D1C2]/30 opacity-60 hover:scale-105 hover:text-[#D4D1C2] transition-all duration-500 ease-out group">
+<span class="material-symbols-outlined mb-1">genetics</span>
+<span class="font-sans uppercase text-[10px] tracking-[0.15em] font-light">Genome</span>
+</button>
+<!-- Chronos -->
+<button class="flex flex-col items-center justify-center text-[#D4D1C2]/30 opacity-60 hover:scale-105 hover:text-[#D4D1C2] transition-all duration-500 ease-out group">
+<span class="material-symbols-outlined mb-1">auto_awesome_motion</span>
+<span class="font-sans uppercase text-[10px] tracking-[0.15em] font-light">Chronos</span>
+</button>
+<!-- CogniSync -->
+<button class="flex flex-col items-center justify-center text-[#D4D1C2]/30 opacity-60 hover:scale-105 hover:text-[#D4D1C2] transition-all duration-500 ease-out group">
+<span class="material-symbols-outlined mb-1">hub</span>
+<span class="font-sans uppercase text-[10px] tracking-[0.15em] font-light">CogniSync</span>
+</button>
+</nav>
+</body></html>

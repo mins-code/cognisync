@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>CogniSync - Neural Input Terminal</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-container": "#45501f",
+                        "secondary-fixed-dim": "#bfcd8f",
+                        "secondary-fixed": "#dbe9a9",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#373a33",
+                        "surface-dim": "#11140e",
+                        "outline": "#90918b",
+                        "tertiary-fixed": "#f4dfcb",
+                        "surface-container-highest": "#33362f",
+                        "surface": "#11140e",
+                        "on-surface-variant": "#c6c7c0",
+                        "tertiary-fixed-dim": "#d7c3b0",
+                        "surface-container-high": "#282b24",
+                        "tertiary": "#d7c3b0",
+                        "surface-variant": "#33362f",
+                        "primary": "#c6c7c0",
+                        "primary-container": "#11130f",
+                        "outline-variant": "#454742",
+                        "on-surface": "#e2e3d9",
+                        "secondary": "#bfcd8f",
+                        "background": "#11140e"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Newsreader"],
+                        "label-sm": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "headline-md": ["Newsreader"],
+                        "display-xl": ["Newsreader"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .glass-panel {
+            background: rgba(40, 43, 36, 0.4);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-top: 0.5px solid rgba(215, 195, 176, 0.3);
+            border-left: 0.5px solid rgba(215, 195, 176, 0.3);
+            border-bottom: 0.5px solid rgba(26, 29, 22, 0.8);
+            border-right: 0.5px solid rgba(26, 29, 22, 0.8);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .ambient-bg {
+            background-image: radial-gradient(circle at 30% 50%, rgba(69, 80, 31, 0.15) 0%, transparent 60%), radial-gradient(circle at 70% 80%, rgba(215, 195, 176, 0.05) 0%, transparent 50%);
+        }
+
+        /* Ghost Input Style for number inputs */
+        .ghost-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(215, 195, 176, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .ghost-input:focus {
+            outline: none;
+            border-bottom-color: rgba(215, 195, 176, 1);
+            background: rgba(40, 43, 36, 0.2);
+            box-shadow: 0 1px 0 0 rgba(215, 195, 176, 0.5);
+        }
+        
+        /* Dropdown custom style */
+        .ghost-select {
+            background-color: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(215, 195, 176, 0.3);
+            transition: all 0.3s ease;
+            appearance: none;
+        }
+        .ghost-select:focus {
+            outline: none;
+            border-bottom-color: rgba(215, 195, 176, 1);
+            background: rgba(40, 43, 36, 0.2);
+            box-shadow: 0 1px 0 0 rgba(215, 195, 176, 0.5);
+        }
+        .ghost-select option {
+            background-color: #282b24;
+            color: #c6c7c0;
+            font-family: 'Manrope', sans-serif;
+            font-size: 1.125rem;
+        }
+
+        /* Range Slider style */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #dbe9a9;
+            cursor: pointer;
+            margin-top: -7px;
+            box-shadow: 0 0 10px rgba(219, 233, 169, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(198, 199, 192, 0.2);
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-surface antialiased min-h-screen relative overflow-x-hidden ambient-bg">
+    <div class="noise-overlay"></div>
+
+    <!-- Fixed Top Navbar -->
+    <header class="fixed top-0 left-0 w-full z-50 bg-surface/60 backdrop-blur-md border-b border-outline-variant/30">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="font-headline-md text-2xl italic text-tertiary-fixed tracking-wide">CogniSync</div>
+            <nav class="hidden md:flex space-x-8 items-center">
+                <a href="{{ url_for('dashboard') }}" class="font-label-sm text-sm uppercase tracking-widest text-on-surface-variant hover:text-tertiary-fixed transition-colors">Pulse</a>
+                <a href="{{ url_for('add_log') }}" class="font-label-sm text-sm uppercase tracking-widest text-tertiary-fixed border-b border-tertiary-fixed pb-1 transition-colors">Log Entry</a>
+                <a href="{{ url_for('simulator') }}" class="font-label-sm text-sm uppercase tracking-widest text-on-surface-variant hover:text-tertiary-fixed transition-colors">Simulator</a>
+            </nav>
+            <div class="flex items-center space-x-6">
+                <a href="{{ url_for('logout') }}" class="font-label-sm text-sm uppercase tracking-widest text-tertiary hover:text-tertiary-fixed transition-colors border border-outline-variant/50 px-4 py-2 rounded-lg hover:bg-surface-variant/50">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-16 px-6 max-w-7xl mx-auto flex flex-col items-center justify-start min-h-[calc(100vh-80px)] relative z-10 space-y-12">
+        
+        <!-- Form Section -->
+        <div class="w-full max-w-3xl glass-panel rounded-2xl p-10 md:p-14 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-secondary-container/10 rounded-full blur-[80px] translate-x-1/4 -translate-y-1/4"></div>
+            
+            <div class="text-center mb-10 relative z-10">
+                <h1 class="font-headline-lg text-4xl text-primary mb-2">Neural Input</h1>
+                <p class="font-body-md text-on-surface-variant text-sm">Synchronize your daily variables in under 90 seconds.</p>
+            </div>
+
+            <form action="{{ url_for('add_log') }}" method="POST" class="space-y-8 relative z-10">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Sleep Duration -->
+                    <div class="flex flex-col">
+                        <label for="sleep_hours" class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant mb-2">Sleep Duration (Hours)</label>
+                        <input type="number" id="sleep_hours" name="sleep_hours" min="3" max="12" step="0.5" required class="ghost-input bg-transparent w-full pl-4 py-3 font-body-lg text-primary placeholder-on-surface-variant/30" placeholder="e.g. 7.5">
+                    </div>
+                    
+                    <!-- Session Length -->
+                    <div class="flex flex-col">
+                        <label for="study_duration" class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant mb-2">Study Duration (Hours)</label>
+                        <input type="number" id="study_duration" name="study_duration" min="0.1" step="0.1" required class="ghost-input bg-transparent w-full pl-4 py-3 font-body-lg text-primary placeholder-on-surface-variant/30" placeholder="e.g. 2.5">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Study Timing -->
+                    <div class="flex flex-col">
+                        <label for="study_hour" class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant mb-2">Hour of Day</label>
+                        <select id="study_hour" name="study_hour" required class="ghost-select bg-transparent w-full pl-4 py-3 font-body-lg text-primary">
+                            {% for h in range(24) %}
+                            <option value="{{ h }}">{{ '%02d' % h }}:00</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Subject Complexity -->
+                    <div class="flex flex-col">
+                        <label for="subject_complexity" class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant mb-2">Subject Complexity</label>
+                        <select id="subject_complexity" name="subject_complexity" required class="ghost-select bg-transparent w-full pl-4 py-3 font-body-lg text-primary">
+                            <option value="low">Low (Easy)</option>
+                            <option value="medium" selected>Medium (Standard)</option>
+                            <option value="high">High (Challenging)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Mood & Energy Sliders -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                    <div class="flex flex-col">
+                        <div class="flex justify-between items-end mb-4">
+                            <label for="mood_score" class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant">Cognitive Mood</label>
+                            <span id="mood_val" class="font-body-lg text-secondary-fixed text-sm">3</span>
+                        </div>
+                        <input type="range" id="mood_score" name="mood_score" min="1" max="5" step="1" value="3" oninput="document.getElementById('mood_val').innerText = this.value">
+                        <div class="flex justify-between mt-2 font-label-sm text-[10px] text-outline-variant">
+                            <span>Poor</span>
+                            <span>Excellent</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col">
+                        <div class="flex justify-between items-end mb-4">
+                            <label for="energy_score" class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant">Physical Energy</label>
+                            <span id="energy_val" class="font-body-lg text-secondary-fixed text-sm">3</span>
+                        </div>
+                        <input type="range" id="energy_score" name="energy_score" min="1" max="5" step="1" value="3" oninput="document.getElementById('energy_val').innerText = this.value">
+                        <div class="flex justify-between mt-2 font-label-sm text-[10px] text-outline-variant">
+                            <span>Drained</span>
+                            <span>Peak</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Retention Slider -->
+                <div class="pt-6 pb-2 border-t border-outline-variant/20">
+                    <div class="flex justify-between items-end mb-6">
+                        <div>
+                            <label for="retention_score" class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant block mb-1">Self-Reported Retention</label>
+                            <p class="text-[10px] text-outline">How well do you feel you absorbed this session?</p>
+                        </div>
+                        <span id="retention_val" class="font-headline-md text-2xl text-tertiary-fixed">50%</span>
+                    </div>
+                    <input type="range" id="retention_score" name="retention_score" min="0" max="100" step="1" value="50" oninput="document.getElementById('retention_val').innerText = this.value + '%'">
+                </div>
+
+                <button type="submit" class="w-full bg-secondary-container hover:bg-secondary-fixed hover:text-surface-dim text-on-surface transition-all duration-300 font-label-sm text-sm uppercase tracking-widest py-4 rounded-lg mt-8 shadow-lg">
+                    Synchronize Log
+                </button>
+            </form>
+        </div>
+
+        <!-- Synchronization History Section -->
+        <div class="w-full max-w-4xl glass-panel rounded-2xl p-8 relative overflow-hidden">
+            <div class="mb-6 flex justify-between items-end border-b border-outline-variant/30 pb-4">
+                <div>
+                    <h2 class="font-headline-md text-2xl text-primary">Synchronization History</h2>
+                    <p class="font-body-md text-on-surface-variant text-sm mt-1">Review your most recent neural uploads.</p>
+                </div>
+                <span class="material-symbols-outlined text-tertiary-fixed text-3xl">history</span>
+            </div>
+            
+            {% if logs %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left font-body-md text-on-surface-variant text-sm">
+                    <thead>
+                        <tr class="text-tertiary-fixed font-label-sm uppercase tracking-widest text-xs border-b border-outline-variant/30">
+                            <th class="pb-4 pl-4 font-normal">Date</th>
+                            <th class="pb-4 font-normal">Study Hour</th>
+                            <th class="pb-4 font-normal">Study Duration</th>
+                            <th class="pb-4 font-normal">Sleep Duration</th>
+                            <th class="pb-4 font-normal">Difficulty</th>
+                            <th class="pb-4 text-right font-normal">Retention</th>
+                            <th class="pb-4 pr-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-outline-variant/10">
+                        {% for log in logs %}
+                        <tr class="hover:bg-surface-variant/40 transition-colors duration-300">
+                            <td class="py-4 pl-4 text-primary opacity-80">
+                                {% if log.created_at %}
+                                    {{ log.created_at.strftime('%B %d, %I:%M %p') }}
+                                {% else %}
+                                    SYS-{{ "%04d" % log.id }}
+                                {% endif %}
+                            </td>
+                            <td class="py-4">{{ "%02d:00" % log.study_hour }}</td>
+                            <td class="py-4">{{ log.study_duration }} hrs</td>
+                            <td class="py-4">{{ log.sleep_hours }} hrs</td>
+                            <td class="py-4">
+                                {% if log.subject_difficulty < 2 %}
+                                    <span class="text-secondary-fixed">Low</span>
+                                {% elif log.subject_difficulty > 4 %}
+                                    <span class="text-error">High</span>
+                                {% else %}
+                                    <span class="text-tertiary">Medium</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-4 text-right font-headline-md text-lg text-primary">{{ log.retention_score | round | int }}%</td>
+                            <td class="py-4 pr-4 text-right">
+                                <form action="{{ url_for('delete_log', log_id=log.id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this log?');">
+                                    <button type="submit" class="text-outline hover:text-error transition-colors" title="Delete Log">
+                                        <span class="material-symbols-outlined text-lg align-middle">delete</span>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-10 bg-surface-container-highest/20 rounded-xl border border-outline-variant/20">
+                <span class="material-symbols-outlined text-outline text-4xl mb-3">cloud_off</span>
+                <p class="font-body-md text-outline-variant italic">No neural logs recorded yet. Begin your first synchronization above.</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </main>
+
+</body>
+</html>

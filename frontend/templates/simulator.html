@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>CogniSync - What-If Simulator</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-container": "#45501f",
+                        "secondary-fixed-dim": "#bfcd8f",
+                        "secondary-fixed": "#dbe9a9",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#373a33",
+                        "surface-dim": "#11140e",
+                        "outline": "#90918b",
+                        "tertiary-fixed": "#f4dfcb",
+                        "surface-container-highest": "#33362f",
+                        "surface": "#11140e",
+                        "on-surface-variant": "#c6c7c0",
+                        "tertiary-fixed-dim": "#d7c3b0",
+                        "surface-container-high": "#282b24",
+                        "tertiary": "#d7c3b0",
+                        "surface-variant": "#33362f",
+                        "primary": "#c6c7c0",
+                        "primary-container": "#11130f",
+                        "outline-variant": "#454742",
+                        "on-surface": "#e2e3d9",
+                        "secondary": "#bfcd8f",
+                        "background": "#11140e"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Newsreader"],
+                        "label-sm": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "headline-md": ["Newsreader"],
+                        "display-xl": ["Newsreader"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .glass-panel {
+            background: rgba(40, 43, 36, 0.4);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-top: 0.5px solid rgba(215, 195, 176, 0.3);
+            border-left: 0.5px solid rgba(215, 195, 176, 0.3);
+            border-bottom: 0.5px solid rgba(26, 29, 22, 0.8);
+            border-right: 0.5px solid rgba(26, 29, 22, 0.8);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .ambient-bg {
+            background-image: radial-gradient(circle at 30% 50%, rgba(69, 80, 31, 0.15) 0%, transparent 60%), radial-gradient(circle at 70% 80%, rgba(215, 195, 176, 0.05) 0%, transparent 50%);
+        }
+
+        /* Range Slider style */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #dbe9a9;
+            cursor: pointer;
+            margin-top: -7px;
+            box-shadow: 0 0 10px rgba(219, 233, 169, 0.5);
+            transition: transform 0.1s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #f4dfcb;
+            box-shadow: 0 0 15px rgba(244, 223, 203, 0.7);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(198, 199, 192, 0.2);
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                text-shadow: 0 0 20px rgba(244, 223, 203, 0.3);
+            }
+            50% {
+                text-shadow: 0 0 40px rgba(244, 223, 203, 0.8);
+            }
+        }
+
+        .retention-glow {
+            animation: pulse-glow 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-surface antialiased min-h-screen relative overflow-x-hidden ambient-bg">
+    <div class="noise-overlay"></div>
+
+    <!-- Fixed Top Navbar -->
+    <header class="fixed top-0 left-0 w-full z-50 bg-surface/60 backdrop-blur-md border-b border-outline-variant/30">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="font-headline-md text-2xl italic text-tertiary-fixed tracking-wide">CogniSync</div>
+            <nav class="hidden md:flex space-x-8 items-center">
+                <a href="{{ url_for('dashboard') }}" class="font-label-sm text-sm uppercase tracking-widest text-on-surface-variant hover:text-tertiary-fixed transition-colors">Pulse</a>
+                <a href="{{ url_for('add_log') }}" class="font-label-sm text-sm uppercase tracking-widest text-on-surface-variant hover:text-tertiary-fixed transition-colors">Log Entry</a>
+                <a href="{{ url_for('simulator') }}" class="font-label-sm text-sm uppercase tracking-widest text-tertiary-fixed border-b border-tertiary-fixed pb-1 transition-colors">Simulator</a>
+            </nav>
+            <div class="flex items-center space-x-6">
+                <a href="{{ url_for('logout') }}" class="font-label-sm text-sm uppercase tracking-widest text-tertiary hover:text-tertiary-fixed transition-colors border border-outline-variant/50 px-4 py-2 rounded-lg hover:bg-surface-variant/50">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-16 px-6 max-w-7xl mx-auto min-h-[calc(100vh-80px)] relative z-10 flex flex-col space-y-8">
+        
+        <div class="text-center mb-4">
+            <h1 class="font-headline-lg text-4xl text-primary mb-2">What-If Simulator</h1>
+            <p class="font-body-md text-on-surface-variant text-sm">Manipulate the variables. Observe how your twin reacts.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Panel: Controllers -->
+            <div class="lg:col-span-7 glass-panel rounded-2xl p-8 relative overflow-hidden">
+                <h2 class="font-headline-md text-2xl text-tertiary-fixed mb-8">Environmental Controls</h2>
+                
+                <div class="space-y-8" id="slider-container">
+                    
+                    <!-- Sleep Hours -->
+                    <div>
+                        <div class="flex justify-between items-end mb-4">
+                            <label class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant">Sleep Duration</label>
+                            <span id="val_sleep_hours" class="font-body-lg text-secondary-fixed text-sm">7.0 hrs</span>
+                        </div>
+                        <input type="range" id="sleep_hours" min="3" max="12" step="0.5" value="7.0">
+                    </div>
+
+                    <!-- Mood Score -->
+                    <div>
+                        <div class="flex justify-between items-end mb-4">
+                            <label class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant">Cognitive Mood</label>
+                            <span id="val_mood_score" class="font-body-lg text-secondary-fixed text-sm">3</span>
+                        </div>
+                        <input type="range" id="mood_score" min="1" max="5" step="1" value="3">
+                    </div>
+
+                    <!-- Energy Score -->
+                    <div>
+                        <div class="flex justify-between items-end mb-4">
+                            <label class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant">Physical Energy</label>
+                            <span id="val_energy_score" class="font-body-lg text-secondary-fixed text-sm">3</span>
+                        </div>
+                        <input type="range" id="energy_score" min="1" max="5" step="1" value="3">
+                    </div>
+
+                    <!-- Study Hour -->
+                    <div>
+                        <div class="flex justify-between items-end mb-4">
+                            <label class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant">Time of Day</label>
+                            <span id="val_study_hour" class="font-body-lg text-secondary-fixed text-sm">10:00</span>
+                        </div>
+                        <input type="range" id="study_hour" min="0" max="23" step="1" value="10">
+                    </div>
+
+                    <!-- Study Duration -->
+                    <div>
+                        <div class="flex justify-between items-end mb-4">
+                            <label class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant">Study Duration</label>
+                            <span id="val_study_duration" class="font-body-lg text-secondary-fixed text-sm">2.0 hrs</span>
+                        </div>
+                        <input type="range" id="study_duration" min="0.5" max="5.0" step="0.5" value="2.0">
+                    </div>
+
+                    <!-- Subject Difficulty -->
+                    <div>
+                        <div class="flex justify-between items-end mb-4">
+                            <label class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant">Subject Complexity</label>
+                            <span id="val_subject_difficulty" class="font-body-lg text-secondary-fixed text-sm">Medium (3)</span>
+                        </div>
+                        <input type="range" id="subject_difficulty" min="1" max="5" step="1" value="3">
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Right Panel: Predicted Retention -->
+            <div class="lg:col-span-5 flex flex-col space-y-8">
+                <div class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center relative overflow-hidden flex-1 h-full min-h-[300px]">
+                    <div class="absolute inset-0 bg-radial-gradient from-secondary-container/20 to-transparent z-0"></div>
+                    <div class="relative z-10 text-center">
+                        <p class="font-label-sm text-xs uppercase tracking-widest text-outline mb-6">Predicted Retention</p>
+                        <div class="font-display-xl text-7xl md:text-8xl text-tertiary-fixed retention-glow tracking-tighter" id="retention-readout">
+                            --%
+                        </div>
+                        <p class="font-body-md text-on-surface-variant text-sm mt-8 opacity-80" id="prediction-status">Loading Twin Neural Model...</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Panel: Correlation Map -->
+        <div class="w-full glass-panel rounded-2xl p-8 relative overflow-hidden">
+            <div class="mb-6 flex justify-between items-end">
+                <div>
+                    <h2 class="font-headline-md text-xl text-primary">Sleep / Retention Correlation Map</h2>
+                    <p class="font-body-md text-on-surface-variant text-sm mt-1">Simulating how variations in Sleep impact retention under current constraints.</p>
+                </div>
+                <span class="material-symbols-outlined text-outline text-2xl">monitoring</span>
+            </div>
+            
+            <div class="w-full relative min-h-[300px]">
+                <canvas id="correlationChart"></canvas>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            let chartInstance = null;
+            let currentAbortController = null;
+
+            // DOM Elements
+            const sliders = [
+                'sleep_hours', 'mood_score', 'energy_score', 
+                'study_hour', 'study_duration', 'subject_difficulty'
+            ];
+            
+            // Format formatters
+            const formatters = {
+                'sleep_hours': val => `${parseFloat(val).toFixed(1)} hrs`,
+                'mood_score': val => val,
+                'energy_score': val => val,
+                'study_hour': val => `${val.toString().padStart(2, '0')}:00`,
+                'study_duration': val => `${parseFloat(val).toFixed(1)} hrs`,
+                'subject_difficulty': val => {
+                    if(val < 2) return `Low (${val})`;
+                    if(val > 4) return `High (${val})`;
+                    return `Medium (${val})`;
+                }
+            };
+
+            function getSliderValues() {
+                return {
+                    sleep_hours: parseFloat(document.getElementById('sleep_hours').value),
+                    mood_score: parseFloat(document.getElementById('mood_score').value),
+                    energy_score: parseFloat(document.getElementById('energy_score').value),
+                    study_hour: parseFloat(document.getElementById('study_hour').value),
+                    study_duration: parseFloat(document.getElementById('study_duration').value),
+                    subject_difficulty: parseFloat(document.getElementById('subject_difficulty').value)
+                };
+            }
+
+            function initChart(labels, data) {
+                const ctx = document.getElementById('correlationChart').getContext('2d');
+                
+                if (chartInstance) {
+                    chartInstance.destroy();
+                }
+
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Predicted Retention',
+                            data: data,
+                            borderColor: '#dbe9a9',
+                            backgroundColor: 'rgba(219, 233, 169, 0.1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#282b24',
+                            pointBorderColor: '#f4dfcb',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(17, 20, 14, 0.9)',
+                                titleColor: '#c6c7c0',
+                                bodyColor: '#dbe9a9',
+                                borderColor: 'rgba(144, 145, 139, 0.3)',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${Math.round(context.raw)}% Retention`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(69, 71, 66, 0.2)', drawBorder: false },
+                                ticks: { color: '#90918b', font: { family: 'Manrope', size: 11 } }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                min: 0,
+                                max: 100,
+                                grid: { color: 'rgba(69, 71, 66, 0.2)', drawBorder: false },
+                                ticks: { 
+                                    color: '#90918b', 
+                                    font: { family: 'Manrope', size: 11 },
+                                    stepSize: 20
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function updatePrediction() {
+                // Update DOM text instantly for snappy feel
+                sliders.forEach(id => {
+                    const val = document.getElementById(id).value;
+                    document.getElementById(`val_${id}`).innerText = formatters[id](val);
+                });
+
+                document.getElementById('prediction-status').innerText = 'Simulating...';
+
+                if (currentAbortController) {
+                    currentAbortController.abort();
+                }
+                currentAbortController = new AbortController();
+
+                const payload = getSliderValues();
+
+                fetch('/api/predict-instant', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: currentAbortController.signal
+                })
+                .then(res => {
+                    if(!res.ok) throw new Error("Model uninitialized");
+                    return res.json();
+                })
+                .then(data => {
+                    // Update readout
+                    document.getElementById('retention-readout').innerText = `${Math.round(data.predicted_retention)}%`;
+                    document.getElementById('prediction-status').innerText = 'Real-time synchronization active.';
+
+                    // Update or Init Chart
+                    initChart(data.sweep_labels, data.sweep_scores);
+                })
+                .catch(err => {
+                    if (err.name !== 'AbortError') {
+                        document.getElementById('retention-readout').innerText = '---';
+                        document.getElementById('prediction-status').innerText = 'Waiting for 14 logs to establish baseline.';
+                        console.error(err);
+                    }
+                });
+            }
+
+            // Attach event listeners to all sliders
+            sliders.forEach(id => {
+                const el = document.getElementById(id);
+                // use 'input' for real-time slider dragging
+                el.addEventListener('input', updatePrediction);
+            });
+
+            // Run initial prediction
+            updatePrediction();
+        });
+    </script>
+</body>
+</html>

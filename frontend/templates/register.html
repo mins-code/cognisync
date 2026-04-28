@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cognitive Digital Twin - Authentication</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#93000a",
+                    "secondary-container": "#45501f",
+                    "secondary-fixed-dim": "#bfcd8f",
+                    "secondary-fixed": "#dbe9a9",
+                    "error": "#ffb4ab",
+                    "on-error": "#690005",
+                    "surface-bright": "#373a33",
+                    "on-primary": "#2f312c",
+                    "surface-dim": "#11140e",
+                    "outline": "#90918b",
+                    "tertiary-fixed": "#f4dfcb",
+                    "on-primary-fixed": "#1a1c18",
+                    "surface-container-highest": "#33362f",
+                    "primary-fixed-dim": "#c6c7c0",
+                    "surface": "#11140e",
+                    "on-secondary": "#2a3406",
+                    "tertiary-container": "#1a1106",
+                    "on-surface-variant": "#c6c7c0",
+                    "on-primary-container": "#7d7e78",
+                    "tertiary-fixed-dim": "#d7c3b0",
+                    "surface-container-high": "#282b24",
+                    "tertiary": "#d7c3b0",
+                    "on-secondary-container": "#b4c285",
+                    "surface-variant": "#33362f",
+                    "primary": "#c6c7c0",
+                    "primary-container": "#11130f",
+                    "on-tertiary-container": "#8c7b6a",
+                    "outline-variant": "#454742",
+                    "inverse-surface": "#e2e3d9",
+                    "surface-container-low": "#1a1d16",
+                    "on-surface": "#e2e3d9",
+                    "on-tertiary-fixed": "#241a0e",
+                    "on-secondary-fixed": "#171e00",
+                    "on-tertiary-fixed-variant": "#524436",
+                    "on-primary-fixed-variant": "#464742",
+                    "on-secondary-fixed-variant": "#404b1b",
+                    "secondary": "#bfcd8f",
+                    "surface-tint": "#c6c7c0",
+                    "primary-fixed": "#e3e3dc",
+                    "on-background": "#e2e3d9",
+                    "inverse-primary": "#5d5f59",
+                    "surface-container": "#1e211a",
+                    "surface-container-lowest": "#0c0f09",
+                    "background": "#11140e",
+                    "inverse-on-surface": "#2e312b",
+                    "on-tertiary": "#3a2e21",
+                    "on-error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-edge": "64px",
+                    "container-max": "1440px",
+                    "section-gap": "128px",
+                    "gutter": "32px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "headline-lg": [
+                            "Newsreader"
+                    ],
+                    "label-sm": [
+                            "Manrope"
+                    ],
+                    "body-md": [
+                            "Manrope"
+                    ],
+                    "body-lg": [
+                            "Manrope"
+                    ],
+                    "headline-md": [
+                            "Newsreader"
+                    ],
+                    "display-xl": [
+                            "Newsreader"
+                    ]
+            },
+            "fontSize": {
+                    "headline-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "1",
+                                    "letterSpacing": "0.15em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "1.6",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "1.6",
+                                    "letterSpacing": "0.01em",
+                                    "fontWeight": "300"
+                            }
+                    ],
+                    "headline-md": [
+                            "32px",
+                            {
+                                    "lineHeight": "1.3",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "display-xl": [
+                            "84px",
+                            {
+                                    "lineHeight": "1.1",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "300"
+                            }
+                    ]
+            }
+        },
+        },
+      }
+    </script>
+<style>
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        
+        .glass-panel {
+            background: rgba(40, 43, 36, 0.4);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-top: 0.5px solid rgba(215, 195, 176, 0.3);
+            border-left: 0.5px solid rgba(215, 195, 176, 0.3);
+            border-bottom: 0.5px solid rgba(26, 29, 22, 0.8);
+            border-right: 0.5px solid rgba(26, 29, 22, 0.8);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .ghost-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(215, 195, 176, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .ghost-input:focus {
+            outline: none;
+            border-bottom-color: rgba(215, 195, 176, 1);
+            background: rgba(40, 43, 36, 0.2);
+            box-shadow: 0 1px 0 0 rgba(215, 195, 176, 0.5);
+        }
+
+        .btn-olive-glow {
+            background: #45501f;
+            box-shadow: inset 0 0 20px rgba(180, 194, 133, 0.2), 0 0 30px rgba(69, 80, 31, 0.4);
+            transition: all 0.4s ease;
+            border: none;
+        }
+
+        .btn-olive-glow:hover {
+            box-shadow: inset 0 0 20px rgba(180, 194, 133, 0.3), 0 0 50px rgba(69, 80, 31, 0.6);
+            transform: translateY(-2px);
+        }
+        
+        .bg-ai-abstract {
+            background-image: radial-gradient(circle at 30% 50%, rgba(69, 80, 31, 0.15) 0%, transparent 60%), radial-gradient(circle at 70% 80%, rgba(215, 195, 176, 0.05) 0%, transparent 50%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex overflow-hidden antialiased">
+<div class="noise-overlay"></div>
+<main class="flex-1 flex flex-col md:flex-row w-full h-screen">
+<!-- Left Section: Abstract AI Visualization -->
+<section class="hidden md:flex flex-1 relative bg-surface-container-lowest overflow-hidden bg-ai-abstract items-center justify-center border-r border-surface-container-highest">
+<div class="absolute inset-0 z-0 opacity-20">
+<img class="w-full h-full object-cover mix-blend-overlay" data-alt="abstract dark textured background with flowing lines and soft ambient lighting resembling a neural network in dark olive and bronze tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnF3y8FCmgaO6FUSRLQaENwnSyJ3odNwUZ2isXnDnSl8BDoT_x7FGswfyyLhkuH_ywb5XUoHBfgtBr67quWlAjOeSoktf-oLzNBsOZiZQJkDHKThk8t-MDLco8eSHTv_N8OxZPCC_yz2lgtlJrLtoR2LGEDi2u0_V0JrpW1Cqz5dk2efn3bv7_4ekJfMrsfE3H39SphktHVglpPIZPp1Qr2U1oADk_qju1gu4vcSZJC2sZICzUDm4pzJ-ZUAdwPWvveZYvRv-AOgIX"/>
+</div>
+<!-- Decorative Elements -->
+<div class="relative z-10 w-full max-w-lg p-margin-edge flex flex-col justify-center h-full">
+<div class="mb-gutter">
+<span class="material-symbols-outlined text-tertiary text-6xl opacity-80" style="font-variation-settings: 'FILL' 0;">
+                        psychology
+                    </span>
+</div>
+<h1 class="font-display-xl text-display-xl text-primary mb-unit">
+                    Orchestrate.
+                </h1>
+<h2 class="font-headline-lg text-headline-lg text-primary/60 italic mb-gutter">
+                    Your Cognitive Journey.
+                </h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-md opacity-80 leading-relaxed border-l-2 border-secondary-container pl-6">
+                    Enter the sanctuary. Align your neural pathways and orchestrate your digital cognition through a unified, tactile interface.
+                </p>
+<!-- Abstract Data visualization nodes -->
+<div class="mt-section-gap flex items-center space-x-6 opacity-40">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<div class="h-[1px] flex-1 bg-gradient-to-r from-tertiary to-transparent"></div>
+<span class="font-label-sm text-label-sm text-tertiary uppercase">Node Active</span>
+</div>
+</div>
+<!-- Atmospheric Glow -->
+<div class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-background to-transparent z-0 pointer-events-none"></div>
+</section>
+<!-- Right Section: Login Panel -->
+<section class="flex-1 flex flex-col justify-center relative bg-background px-6 md:px-margin-edge lg:px-[120px]">
+<!-- Subtle background glow for the right side -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-radial-gradient from-surface-container-high/20 to-transparent z-0 pointer-events-none rounded-full blur-[100px]"></div>
+<div class="w-full max-w-md mx-auto relative z-10 mt-12">
+<!-- Mobile Logo (Hidden on Desktop) -->
+<div class="md:hidden mb-16 text-center">
+<h2 class="font-headline-md text-headline-md text-primary italic tracking-tighter">Cognitive Digital Twin</h2>
+</div>
+<!-- Glass Login Panel -->
+<div class="glass-panel rounded-xl p-10 md:p-12">
+<div class="mb-8">
+<h3 class="font-headline-md text-headline-md text-primary mb-2">Register CogniSync ID</h3>
+<p class="font-body-md text-body-md text-on-surface-variant/70">Create your unique identifier.</p>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="mb-6 space-y-4">
+      {% for category, message in messages %}
+        <div class="glass-panel p-4 rounded text-center {% if category == 'error' %}text-error{% else %}text-tertiary-fixed{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<form action="{{ url_for('register') }}" method="POST" class="space-y-6">
+<div class="relative">
+<label class="block font-label-sm text-label-sm text-tertiary mb-3 opacity-80" for="neural_id">Neural Identifier</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-0 text-on-surface-variant/50 pointer-events-none" style="font-variation-settings: 'FILL' 0;">
+                                    fingerprint
+                                </span>
+<input class="ghost-input bg-transparent w-full pl-8 py-3 font-body-lg text-body-lg text-primary placeholder-on-surface-variant/30" id="neural_id" name="student_id" placeholder="Create your CogniSync ID" type="text" required/>
+</div>
+</div>
+<div class="relative">
+<div class="flex justify-between items-baseline mb-3">
+<label class="block font-label-sm text-label-sm text-tertiary opacity-80" for="access_key">Access Key</label>
+</div>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-0 text-on-surface-variant/50 pointer-events-none" style="font-variation-settings: 'FILL' 0;">
+                                    key
+                                </span>
+<input class="ghost-input bg-transparent w-full pl-8 py-3 font-body-lg text-body-lg text-primary placeholder-on-surface-variant/30" id="access_key" name="password" placeholder="••••••••••" type="password" required/>
+</div>
+</div>
+<div class="relative">
+<div class="flex justify-between items-baseline mb-3">
+<label class="block font-label-sm text-label-sm text-tertiary opacity-80" for="confirm_key">Confirm Access Key</label>
+</div>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-0 text-on-surface-variant/50 pointer-events-none" style="font-variation-settings: 'FILL' 0;">
+                                    key
+                                </span>
+<input class="ghost-input bg-transparent w-full pl-8 py-3 font-body-lg text-body-lg text-primary placeholder-on-surface-variant/30" id="confirm_key" name="confirm_password" placeholder="••••••••••" type="password" required/>
+</div>
+</div>
+<div class="pt-6">
+<button class="btn-olive-glow w-full py-4 rounded-lg flex items-center justify-center group cursor-pointer" type="submit">
+<span class="font-label-sm text-label-sm text-tertiary-fixed mr-3">Initialize CogniSync</span>
+<span class="material-symbols-outlined text-tertiary-fixed group-hover:translate-x-1 transition-transform duration-300" style="font-variation-settings: 'FILL' 0;">
+                                    arrow_forward
+                                </span>
+</button>
+</div>
+</form>
+</div>
+<div class="mt-8 flex justify-center space-x-8">
+<a class="font-label-sm text-label-sm text-tertiary-fixed underline underline-offset-4 hover:text-primary transition-colors" href="{{ url_for('login') }}">Already have a CogniSync ID? Login</a>
+</div>
+
+</div>
+</section>
+</main>
+</body></html>
