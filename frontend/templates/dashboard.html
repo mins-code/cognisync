@@ -471,11 +471,10 @@
                 
                 item.innerHTML = `
                     <div class="flex items-center gap-4 overflow-hidden py-1">
-                        <label class="relative flex items-center cursor-pointer group flex-shrink-0 ml-1">
+                        <label class="relative flex items-center justify-center cursor-pointer group flex-shrink-0 ml-1">
                             <input type="checkbox" checked class="peer sr-only quiz-selector" data-filename="${filename}">
-                            <div class="w-5 h-5 rounded border-2 border-outline-variant bg-surface-container-high peer-checked:bg-secondary-fixed peer-checked:border-secondary-fixed flex items-center justify-center transition-all duration-300 peer-checked:shadow-[0_0_12px_rgba(206,233,182,0.5)]">
-                                <div class="w-2 h-2 rounded-full bg-surface-dim opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                            </div>
+                            <div class="w-5 h-5 rounded border-2 border-outline-variant bg-surface-container-high peer-checked:bg-secondary-fixed peer-checked:border-secondary-fixed transition-all duration-300 peer-checked:shadow-[0_0_12px_rgba(206,233,182,0.5)]"></div>
+                            <div class="absolute w-2 h-2 rounded-full bg-surface-dim opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"></div>
                         </label>
                         <span class="material-symbols-outlined flex-shrink-0 text-tertiary-fixed text-xl">description</span>
                         <span class="font-body-md text-on-surface text-sm truncate" title="${displayName}">${displayName}</span>
