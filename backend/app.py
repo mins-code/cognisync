@@ -13,11 +13,17 @@ from ml.predict import predict_retention
 from ml.train import retrain_model
 from ml.synthetic import generate_synthetic_data
 from ml.whatif_engine import get_best_windows
+from ml.rag_engine import ingest_syllabus, delete_syllabus, delete_single_syllabus, generate_quiz_from_rag
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cdt.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'super-secret-key'
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
@@ -159,8 +165,32 @@ def add_log():
         flash("Neural Data Synchronized", "success")
         return redirect(url_for('dashboard'))
         
+    upload_dir = app.config['UPLOAD_FOLDER']
+    prefix = f"{current_user.student_id}_"
+    syllabus_synced = False
+    if os.path.exists(upload_dir):
+        for filename in os.listdir(upload_dir):
+            if filename.startswith(prefix) and filename.endswith('.pdf'):
+                syllabus_synced = True
+                break
+                
     logs = StudyLog.query.filter_by(user_id=current_user.id).order_by(StudyLog.id.desc()).limit(10).all()
-    return render_template('log.html', logs=logs)
+    return render_template('log.html', logs=logs, syllabus_synced=syllabus_synced)
+
+@app.route('/quiz-check')
+@login_required
+def quiz_check():
+    return render_template('quiz_check.html')
+
+@app.route('/quiz-setup')
+@login_required
+def quiz_setup():
+    return render_template('quiz_setup.html')
+
+@app.route('/quiz')
+@login_required
+def quiz():
+    return render_template('quiz.html')
 
 @app.route('/log/<int:log_id>/delete', methods=['POST'])
 @login_required
@@ -267,6 +297,117 @@ def predict_instant():
         'sweep_labels': sweep_labels,
         'sweep_scores': sweep_scores
     })
+
+@app.route('/api/upload-syllabus', methods=['POST'])
+@login_required
+def upload_syllabus():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+        
+    if file and file.filename.lower().endswith('.pdf'):
+        filename = f"{current_user.student_id}_{secure_filename(file.filename)}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+        
+        try:
+            ingest_syllabus(file_path, current_user.student_id)
+            return jsonify({
+                'success': True, 
+                'message': 'Syllabus processed and ingested successfully',
+                'filename': filename,
+                'display_name': file.filename
+            })
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+            
+    return jsonify({'error': 'Invalid file type. Only PDFs are allowed.'}), 400
+
+@app.route('/api/delete-syllabus', methods=['POST'])
+@login_required
+def delete_syllabus_route():
+    try:
+        delete_syllabus(current_user.student_id)
+        return jsonify({'success': True, 'message': 'Neural Memory wiped successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/syllabuses', methods=['GET'])
+@login_required
+def list_syllabuses():
+    upload_dir = app.config['UPLOAD_FOLDER']
+    files = []
+    prefix = f"{current_user.student_id}_"
+    if os.path.exists(upload_dir):
+        for filename in os.listdir(upload_dir):
+            if filename.startswith(prefix) and filename.endswith('.pdf'):
+                display_name = filename[len(prefix):]
+                files.append({'filename': filename, 'display_name': display_name})
+    return jsonify({'syllabuses': files})
+
+@app.route('/api/delete-single-syllabus', methods=['POST'])
+@login_required
+def delete_single_syllabus_route():
+    data = request.json
+    filename = data.get('filename')
+    if not filename or not filename.startswith(f"{current_user.student_id}_"):
+        return jsonify({'error': 'Invalid or missing filename'}), 400
+        
+    try:
+        delete_single_syllabus(current_user.student_id, filename)
+        return jsonify({'success': True, 'message': 'File deleted successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/generate-quiz', methods=['POST'])
+@login_required
+def generate_quiz_route():
+    data = request.json
+    topic = data.get('topic')
+    selected_files = data.get('selected_files', [])
+    quantity = data.get('quantity', 5)
+    
+    if not topic:
+        return jsonify({'error': 'Topic is required'}), 400
+        
+    try:
+        questions = generate_quiz_from_rag(topic, current_user.student_id, selected_files, quantity)
+        return jsonify({'questions': questions})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/submit-quiz-score', methods=['POST'])
+@login_required
+def submit_quiz_score():
+    data = request.json
+    score_percent = data.get('score')
+    
+    if score_percent is None:
+        return jsonify({'error': 'Score is required'}), 400
+        
+    try:
+        latest_log = StudyLog.query.filter_by(user_id=current_user.id).order_by(StudyLog.created_at.desc()).first()
+        
+        if not latest_log:
+            return jsonify({'error': 'No active study session found to calibrate.'}), 404
+            
+        objective_score_10 = float(score_percent) / 10
+        calibrated_score = (latest_log.retention_score + objective_score_10) / 2
+        
+        latest_log.retention_score = round(calibrated_score, 2)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'new_score': latest_log.retention_score,
+            'message': 'Neural calibration successful. Retention score updated.'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

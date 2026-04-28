@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>CogniSync - Neural Exam Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <style>
+        .glass-panel { 
+            background: rgba(40, 43, 36, 0.4); 
+            backdrop-filter: blur(30px); 
+            border: 1px solid rgba(215, 195, 176, 0.1); 
+        }
+        .timer-glow { box-shadow: 0 0 20px rgba(219, 233, 169, 0.3); }
+        .neural-pulse { animation: neural-pulse 2s ease-in-out infinite; }
+        @keyframes neural-pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
+        .scan-line { height: 2px; background: linear-gradient(90deg, transparent, #dbe9a9, transparent); position: absolute; width: 100%; top: -100%; animation: scan 3s linear infinite; }
+        @keyframes scan { 0% { top: 0; opacity: 0; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        
+        .palette-btn { transition: all 0.3s ease; }
+        .palette-answered { background-color: #45501f !important; color: #dbe9a9 !important; border-color: #dbe9a9 !important; }
+        .palette-skipped { background-color: #690005 !important; color: #ffb4ab !important; border-color: #ffb4ab !important; }
+        .palette-review { background-color: #3a2e21 !important; color: #f4dfcb !important; border-color: #f4dfcb !important; }
+        .palette-active { outline: 2px solid #dbe9a9; outline-offset: 2px; }
+    </style>
+</head>
+<body class="bg-[#11140e] text-[#e2e3d9] font-['Manrope'] min-h-screen flex flex-col items-center justify-center p-4 md:p-10 relative overflow-x-hidden">
+    
+    <!-- Loader -->
+    <div id="loading-state" class="flex flex-col items-center gap-10 relative z-10">
+        <div class="relative w-48 h-48 flex items-center justify-center">
+            <div class="absolute inset-0 border border-[#dbe9a9]/20 rounded-full animate-ping opacity-20"></div>
+            <div class="absolute inset-8 border-2 border-t-[#dbe9a9] rounded-full animate-spin"></div>
+            <span class="material-symbols-outlined text-6xl text-[#dbe9a9] neural-pulse">psychology</span>
+            <div class="scan-line"></div>
+        </div>
+        <div class="text-center space-y-3">
+            <p class="uppercase tracking-[0.5em] text-sm text-[#dbe9a9] font-bold">Neural Syncing</p>
+            <p class="font-['Newsreader'] italic text-2xl text-[#c6c7c0] opacity-80">Orchestrating questions from your knowledge base...</p>
+        </div>
+    </div>
+
+    <!-- Exam Portal -->
+    <div id="quiz-container" class="hidden w-full max-w-7xl flex flex-col md:flex-row gap-8 relative z-10">
+        
+        <!-- Main Question Area -->
+        <div class="flex-1 space-y-6">
+            <div class="flex justify-between items-center mb-4">
+                <div id="timer" class="px-8 py-3 bg-[#45501f] text-[#dbe9a9] rounded-2xl text-2xl font-bold timer-glow border border-[#dbe9a9]/30">00:00</div>
+                <div class="text-sm uppercase tracking-widest text-[#c6c7c0]">Knowledge Validation Mode</div>
+            </div>
+
+            <div id="question-card" class="glass-panel rounded-[2rem] p-10 md:p-16 min-h-[500px] flex flex-col justify-between relative overflow-hidden transition-all duration-500">
+                <div>
+                    <div class="flex items-center gap-3 mb-8">
+                        <span id="current-q-num" class="text-[#dbe9a9] font-bold text-lg">Q1.</span>
+                        <div class="h-px flex-1 bg-outline-variant/30"></div>
+                    </div>
+                    <h2 id="question-text" class="text-2xl md:text-3xl font-['Newsreader'] text-[#e2e3d9] mb-12 leading-relaxed"></h2>
+                    <div id="options-container" class="grid grid-cols-1 gap-4"></div>
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="flex flex-wrap gap-4 mt-12 pt-10 border-t border-outline-variant/20">
+                    <button id="prev-btn" class="px-6 py-3 rounded-xl border border-outline-variant hover:bg-surface-container-high transition-all flex items-center gap-2 text-sm uppercase tracking-widest disabled:opacity-30 disabled:pointer-events-none">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                        Previous
+                    </button>
+                    <button id="review-btn" class="px-6 py-3 rounded-xl border border-tertiary/30 text-tertiary-fixed hover:bg-tertiary/10 transition-all flex items-center gap-2 text-sm uppercase tracking-widest">
+                        <span class="material-symbols-outlined">bookmark</span>
+                        Mark for Review
+                    </button>
+                    <div class="flex-1"></div>
+                    <button id="next-btn" class="px-8 py-3 rounded-xl bg-[#45501f] text-[#dbe9a9] hover:bg-[#dbe9a9] hover:text-[#11140e] transition-all flex items-center gap-2 text-sm uppercase tracking-widest font-bold">
+                        Next
+                        <span class="material-symbols-outlined">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar: Question Palette -->
+        <div class="w-full md:w-80 space-y-6">
+            <div class="glass-panel rounded-[2rem] p-8 flex flex-col gap-6">
+                <h3 class="font-label-sm text-xs uppercase tracking-widest text-[#c6c7c0]">Question Palette</h3>
+                
+                <div id="palette-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                    <!-- Dots/Buttons will be injected here -->
+                </div>
+
+                <div class="space-y-3 pt-6 border-t border-outline-variant/20">
+                    <div class="flex items-center gap-3 text-[10px] uppercase tracking-widest">
+                        <div class="w-3 h-3 rounded bg-[#45501f] border border-[#dbe9a9]"></div>
+                        <span>Answered</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-[10px] uppercase tracking-widest">
+                        <div class="w-3 h-3 rounded bg-[#690005] border border-[#ffb4ab]"></div>
+                        <span>Skipped</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-[10px] uppercase tracking-widest">
+                        <div class="w-3 h-3 rounded bg-[#3a2e21] border border-[#f4dfcb]"></div>
+                        <span>For Review</span>
+                    </div>
+                </div>
+
+                <button id="submit-exam-btn" class="w-full mt-6 py-5 rounded-2xl bg-[#dbe9a9] text-[#11140e] font-bold uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(219,233,169,0.3)] hover:scale-[1.02] transition-all active:scale-95">
+                    Finish Exam
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Area -->
+    <div id="results-container" class="hidden w-full max-w-4xl space-y-12 relative z-10 py-20 overflow-y-auto">
+        <div class="text-center mb-16">
+            <h1 class="text-6xl font-['Newsreader'] text-[#dbe9a9] mb-4">Neural Feedback</h1>
+            <p id="score-display" class="text-xl text-[#c6c7c0] uppercase tracking-widest"></p>
+        </div>
+        <div id="results-list" class="space-y-8"></div>
+        <div class="flex justify-center pt-12 pb-20">
+            <button onclick="window.location.href='/log'" class="px-12 py-5 bg-[#45501f] text-[#dbe9a9] rounded-full uppercase tracking-widest font-bold border border-[#dbe9a9]/20 hover:bg-[#dbe9a9] hover:text-[#11140e] transition-all shadow-xl">Return to Terminal</button>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const topic = urlParams.get('topic');
+        const quantity = parseInt(urlParams.get('q')) || 5;
+        
+        let questions = [];
+        let currentIdx = 0;
+        let userAnswers = {}; // Map of idx -> selected option
+        let reviewStatus = {}; // Map of idx -> boolean
+        let visitedStatus = {}; // Map of idx -> boolean
+        let timeLeft = quantity * 60;
+        let timerInterval;
+
+        async function init() {
+            try {
+                const res = await fetch('/api/generate-quiz', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ topic, quantity })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                questions = data.questions;
+                
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('quiz-container').classList.remove('hidden');
+                
+                renderPalette();
+                startTimer();
+                showQuestion(0);
+            } catch (e) {
+                alert("Neural connection failed: " + e.message);
+                window.location.href = '/quiz-setup';
+            }
+        }
+
+        function startTimer() {
+            const timerEl = document.getElementById('timer');
+            timerInterval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    finishQuiz();
+                    return;
+                }
+                timeLeft--;
+                const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                const s = (timeLeft % 60).toString().padStart(2, '0');
+                timerEl.innerText = `${m}:${s}`;
+                if (timeLeft < 60) timerEl.classList.add('text-rose-500', 'animate-pulse');
+            }, 1000);
+        }
+
+        function renderPalette() {
+            const grid = document.getElementById('palette-grid');
+            grid.innerHTML = '';
+            questions.forEach((_, i) => {
+                const btn = document.createElement('button');
+                btn.className = `palette-btn w-full aspect-square rounded-xl border border-outline-variant/30 flex items-center justify-center text-xs font-bold`;
+                btn.innerText = i + 1;
+                btn.onclick = () => showQuestion(i);
+                updateBtnStyle(btn, i);
+                grid.appendChild(btn);
+            });
+        }
+
+        function updateBtnStyle(btn, i) {
+            btn.classList.remove('palette-answered', 'palette-skipped', 'palette-review', 'palette-active');
+            if (i === currentIdx) btn.classList.add('palette-active');
+            
+            if (reviewStatus[i]) {
+                btn.classList.add('palette-review');
+            } else if (userAnswers[i]) {
+                btn.classList.add('palette-answered');
+            } else if (visitedStatus[i]) {
+                btn.classList.add('palette-skipped');
+            }
+        }
+
+        function showQuestion(idx) {
+            // Mark current as visited if moving away
+            visitedStatus[currentIdx] = true;
+            
+            currentIdx = idx;
+            const q = questions[idx];
+            document.getElementById('current-q-num').innerText = `Q${idx + 1}.`;
+            document.getElementById('question-text').innerText = q.question;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            q.options.forEach(opt => {
+                const isSelected = userAnswers[idx] === opt;
+                const btn = document.createElement('button');
+                btn.className = `p-6 text-left border rounded-2xl transition-all duration-300 ${isSelected ? 'bg-[#dbe9a9]/20 border-[#dbe9a9] shadow-[0_0_15px_rgba(219,233,169,0.1)]' : 'border-[#454742] hover:bg-[#dbe9a9]/5 hover:border-[#dbe9a9]/30'}`;
+                btn.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-3 h-3 rounded-full border border-outline-variant ${isSelected ? 'bg-[#dbe9a9]' : ''}"></div>
+                        <span class="text-lg">${opt}</span>
+                    </div>
+                `;
+                btn.onclick = () => {
+                    userAnswers[idx] = opt;
+                    showQuestion(idx);
+                };
+                container.appendChild(btn);
+            });
+
+            // Update nav buttons
+            document.getElementById('prev-btn').disabled = idx === 0;
+            document.getElementById('next-btn').innerHTML = idx === questions.length - 1 ? 'Finish <span class="material-symbols-outlined">done_all</span>' : 'Next <span class="material-symbols-outlined">arrow_forward</span>';
+            
+            renderPalette();
+        }
+
+        document.getElementById('prev-btn').onclick = () => { if (currentIdx > 0) showQuestion(currentIdx - 1); };
+        document.getElementById('next-btn').onclick = () => { 
+            if (currentIdx < questions.length - 1) {
+                showQuestion(currentIdx + 1);
+            } else {
+                finishQuiz();
+            }
+        };
+        document.getElementById('review-btn').onclick = () => {
+            reviewStatus[currentIdx] = !reviewStatus[currentIdx];
+            renderPalette();
+        };
+        document.getElementById('submit-exam-btn').onclick = () => {
+            if (confirm("Are you sure you want to submit the exam?")) finishQuiz();
+        };
+
+        async function finishQuiz() {
+            clearInterval(timerInterval);
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('results-container').classList.remove('hidden');
+            document.body.style.overflowY = 'auto';
+            
+            let correctCount = 0;
+            const list = document.getElementById('results-list');
+            list.innerHTML = '';
+            
+            questions.forEach((q, i) => {
+                const userAns = userAnswers[i] || "Skipped";
+                const isCorrect = userAns === q.answer;
+                if (isCorrect) correctCount++;
+                
+                const card = document.createElement('div');
+                card.className = `glass-panel rounded-3xl p-8 border-l-8 ${isCorrect ? 'border-emerald-500' : 'border-rose-500'}`;
+                card.innerHTML = `
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="text-xl font-['Newsreader']">${q.question}</h3>
+                        <span class="material-symbols-outlined ${isCorrect ? 'text-emerald-500' : 'text-rose-500'}">
+                            ${isCorrect ? 'check_circle' : 'cancel'}
+                        </span>
+                    </div>
+                    <div class="space-y-2 mb-6">
+                        <p class="text-sm">Your answer: <span class="${isCorrect ? 'text-emerald-400' : 'text-rose-400'}">${userAns}</span></p>
+                        ${!isCorrect ? `<p class="text-sm text-emerald-400">Correct: ${q.answer}</p>` : ''}
+                    </div>
+                    <div class="pt-6 border-t border-outline-variant/30">
+                        <p class="text-[10px] uppercase tracking-widest text-[#d7c3b0] mb-2">Neural Explanation</p>
+                        <p class="text-sm italic text-[#c6c7c0] leading-relaxed">${q.explanation}</p>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            const scorePercent = (correctCount / questions.length) * 100;
+            document.getElementById('score-display').innerText = `Calibration Score: ${scorePercent.toFixed(1)}%`;
+            
+            await fetch('/api/submit-quiz-score', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ score: scorePercent })
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

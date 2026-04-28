@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>CogniSync - Neural Quiz Setup</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-container": "#45501f",
+                        "secondary-fixed": "#dbe9a9",
+                        "surface": "#11140e",
+                        "primary": "#c6c7c0",
+                        "tertiary": "#d7c3b0",
+                        "tertiary-fixed": "#f4dfcb",
+                        "outline-variant": "#454742",
+                        "background": "#11140e"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-panel {
+            background: rgba(40, 43, 36, 0.4);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(215, 195, 176, 0.1);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+        }
+        .ghost-input {
+            background-color: transparent !important;
+            border: none !important;
+            border-bottom: 1px solid rgba(215, 195, 176, 0.3) !important;
+            color: #dbe9a9 !important;
+            transition: all 0.3s ease;
+        }
+        .ghost-input:focus {
+            outline: none !important;
+            border-bottom-color: #dbe9a9 !important;
+            background-color: rgba(40, 43, 36, 0.4) !important;
+            box-shadow: 0 1px 0 0 rgba(215, 195, 176, 0.5) !important;
+        }
+        .noise-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 9999; opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased min-h-screen flex items-center justify-center p-6 relative">
+    <div class="noise-overlay"></div>
+    <div class="w-full max-w-xl glass-panel rounded-3xl p-10 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-secondary-container/10 rounded-full blur-[80px] translate-x-1/4 -translate-y-1/4"></div>
+        
+        <h1 class="font-headline-lg text-4xl text-secondary-fixed mb-10 text-center drop-shadow-[0_0_15px_rgba(219,233,169,0.3)]">Quiz Parameters</h1>
+        
+        <div class="space-y-10 relative z-10">
+            <div class="flex flex-col">
+                <label class="font-label-sm text-sm uppercase tracking-[0.2em] text-tertiary-fixed mb-4 opacity-90">Topic focus</label>
+                <input type="text" id="topic" class="ghost-input w-full pl-4 py-3 font-body-lg text-secondary-fixed placeholder-secondary-fixed/20" placeholder="e.g. Cellular Respiration or 'all topics'">
+            </div>
+
+            <div class="flex flex-col">
+                <label class="font-label-sm text-sm uppercase tracking-[0.2em] text-tertiary-fixed mb-4 opacity-90">Complexity Depth</label>
+                <div class="flex bg-surface-container-high/40 rounded-2xl p-1.5 border border-outline-variant/30">
+                    <button onclick="setDifficulty('easy')" class="difficulty-btn flex-1 py-3 rounded-xl text-xs uppercase tracking-widest transition-all text-secondary-fixed/40 hover:text-secondary-fixed/80" data-val="easy">Easy</button>
+                    <button onclick="setDifficulty('medium')" class="difficulty-btn flex-1 py-3 rounded-xl text-xs uppercase tracking-widest bg-secondary-fixed text-surface-dim shadow-[0_0_20px_rgba(219,233,169,0.2)] font-bold" data-val="medium">Medium</button>
+                    <button onclick="setDifficulty('hard')" class="difficulty-btn flex-1 py-3 rounded-xl text-xs uppercase tracking-widest transition-all text-secondary-fixed/40 hover:text-secondary-fixed/80" data-val="hard">Hard</button>
+                </div>
+            </div>
+
+            <div class="flex flex-col">
+                <label class="font-label-sm text-sm uppercase tracking-[0.2em] text-tertiary-fixed mb-4 opacity-90">Question Quantity</label>
+                <div class="flex items-center gap-4">
+                    <input type="number" id="quantity" min="1" value="5" class="ghost-input w-24 pl-4 py-3 font-body-lg text-secondary-fixed">
+                    <span class="text-xs text-secondary-fixed/60 uppercase tracking-widest">Questions</span>
+                </div>
+            </div>
+
+            <button id="begin-scan" class="w-full bg-secondary-container hover:bg-secondary-fixed text-secondary-fixed hover:text-[#11140e] py-5 rounded-2xl font-label-sm uppercase tracking-[0.2em] transition-all duration-500 mt-6 flex items-center justify-center gap-3 border border-secondary-fixed/20 hover:border-secondary-fixed shadow-lg group">
+                <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-700">radar</span>
+                Begin Neural Scan
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let difficulty = 'medium';
+        function setDifficulty(val) {
+            difficulty = val;
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                if(btn.dataset.val === val) {
+                    btn.classList.add('bg-secondary-fixed', 'text-surface-dim', 'shadow-[0_0_20px_rgba(219,233,169,0.2)]', 'font-bold');
+                    btn.classList.remove('text-secondary-fixed/40', 'hover:text-secondary-fixed/80');
+                } else {
+                    btn.classList.remove('bg-secondary-fixed', 'text-surface-dim', 'shadow-[0_0_20px_rgba(219,233,169,0.2)]', 'font-bold');
+                    btn.classList.add('text-secondary-fixed/40', 'hover:text-secondary-fixed/80');
+                }
+            });
+        }
+
+        document.getElementById('begin-scan').addEventListener('click', () => {
+            const topic = document.getElementById('topic').value;
+            if(!topic) return alert('Enter a topic focus.');
+            
+            const quantity = document.getElementById('quantity').value;
+            window.location.href = `/quiz?topic=${encodeURIComponent(topic)}&difficulty=${difficulty}&q=${quantity}`;
+        });
+    </script>
+</body>
+</html>

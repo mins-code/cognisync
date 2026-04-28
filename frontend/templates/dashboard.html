@@ -221,6 +221,48 @@
                 </div>
             </div>
 
+            <!-- Neural Knowledge Sync Card (RAG Upload) -->
+            <div class="lg:col-span-12 glass-panel rounded-2xl p-8 flex flex-col relative overflow-hidden">
+                <div class="mb-6 flex justify-between items-center">
+                    <h3 class="font-headline-md text-2xl text-primary">Neural Knowledge Sync</h3>
+                    <span id="sync-status" class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant transition-colors">Status: No Syllabus Synced</span>
+                </div>
+                
+                <!-- Drag and Drop Zone -->
+                <div id="dropzone" class="w-full border-2 border-dashed border-outline-variant/50 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-secondary-fixed transition-colors bg-surface-container-highest/10 relative group">
+                    <input type="file" id="syllabus-upload" accept=".pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                    <span class="material-symbols-outlined text-4xl text-on-surface-variant group-hover:text-secondary-fixed transition-colors mb-2">cloud_upload</span>
+                    <p class="font-body-md text-on-surface-variant group-hover:text-primary transition-colors">Drag and drop PDFs here, or click to browse</p>
+                    <p class="font-label-sm text-xs text-outline mt-2">Only .pdf files are supported</p>
+                </div>
+                
+                <!-- Uploading Status -->
+                <div id="upload-progress" class="hidden w-full mt-4 flex items-center justify-center text-secondary-fixed font-label-sm uppercase tracking-widest text-sm">
+                    <span class="material-symbols-outlined animate-spin mr-2">sync</span> Syncing...
+                </div>
+
+                <!-- File List Area -->
+                <div class="mt-6 w-full">
+                    <h4 class="font-label-sm text-xs uppercase tracking-widest text-on-surface-variant mb-4">Ingested Knowledge Base</h4>
+                    <div id="syllabus-list" class="flex flex-col gap-3">
+                        <!-- Items will be dynamically inserted here -->
+                        <p id="no-files-msg" class="text-sm text-outline italic">No syllabuses uploaded yet.</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-end">
+                    <button id="clear-memory-btn" class="px-4 py-2 bg-transparent text-error font-label-sm uppercase tracking-widest text-sm rounded-full border border-error/50 hover:bg-error/10 hover:shadow-[0_0_15px_rgba(255,180,171,0.3)] transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-lg">delete_forever</span>
+                        <span>Clear All Memory</span>
+                    </button>
+                </div>
+
+                <!-- Success Notification (Hidden by default) -->
+                <div id="sync-success-msg" class="hidden mt-4 p-4 rounded-lg bg-secondary-container/20 border border-secondary-fixed/30 text-secondary-fixed text-center font-body-md transition-opacity duration-300">
+                    <span class="material-symbols-outlined align-middle mr-2">check_circle</span> Neural Memory Updated
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -312,6 +354,214 @@
                     });
                 })
                 .catch(error => console.error('Error fetching dashboard stats:', error));
+
+            // Syllabus Management Logic
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('syllabus-upload');
+            const statusLabel = document.getElementById('sync-status');
+            const successMsg = document.getElementById('sync-success-msg');
+            const syllabusList = document.getElementById('syllabus-list');
+            const noFilesMsg = document.getElementById('no-files-msg');
+            const uploadProgress = document.getElementById('upload-progress');
+            const clearMemoryBtn = document.getElementById('clear-memory-btn');
+
+            // Drag and Drop Events
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, () => dropzone.classList.add('border-secondary-fixed', 'bg-secondary-container/10'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, () => dropzone.classList.remove('border-secondary-fixed', 'bg-secondary-container/10'), false);
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if(files.length > 0) {
+                    handleUpload(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if(e.target.files.length > 0) {
+                    handleUpload(e.target.files[0]);
+                }
+            });
+
+            async function handleUpload(file) {
+                if (!file.name.toLowerCase().endsWith('.pdf')) {
+                    alert('Only PDF files are supported.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                dropzone.classList.add('hidden');
+                uploadProgress.classList.remove('hidden');
+                successMsg.classList.add('hidden');
+
+                try {
+                    const response = await fetch('/api/upload-syllabus', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        statusLabel.textContent = 'Status: Neural Memory Active';
+                        statusLabel.classList.add('text-secondary-fixed');
+                        statusLabel.classList.remove('text-on-surface-variant');
+                        successMsg.classList.remove('hidden');
+                        fileInput.value = ''; 
+                        
+                        addFileToList(result.filename, result.display_name);
+                        
+                        setTimeout(() => successMsg.classList.add('hidden'), 3000);
+                    } else {
+                        alert('Sync failed: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Error uploading syllabus:', error);
+                    alert('An error occurred during synchronization.');
+                } finally {
+                    dropzone.classList.remove('hidden');
+                    uploadProgress.classList.add('hidden');
+                }
+            }
+
+            // Fetch and Render List
+            async function fetchSyllabuses() {
+                try {
+                    const response = await fetch('/api/syllabuses');
+                    const result = await response.json();
+                    
+                    if (result.syllabuses && result.syllabuses.length > 0) {
+                        statusLabel.textContent = 'Status: Neural Memory Active';
+                        statusLabel.classList.add('text-secondary-fixed');
+                        statusLabel.classList.remove('text-on-surface-variant');
+                        
+                        noFilesMsg.classList.add('hidden');
+                        result.syllabuses.forEach(f => addFileToList(f.filename, f.display_name));
+                    }
+                } catch (error) {
+                    console.error('Error fetching syllabuses:', error);
+                }
+            }
+
+            function addFileToList(filename, displayName) {
+                noFilesMsg.classList.add('hidden');
+                
+                // Check if already exists in DOM
+                if(document.getElementById(`file-${filename}`)) return;
+                
+                const item = document.createElement('div');
+                item.id = `file-${filename}`;
+                item.className = 'flex items-center justify-between p-3 rounded-lg bg-surface-container-high border border-outline-variant/30 hover:border-secondary-fixed/50 transition-colors';
+                
+                item.innerHTML = `
+                    <div class="flex items-center gap-4 overflow-hidden py-1">
+                        <label class="relative flex items-center cursor-pointer group flex-shrink-0 ml-1">
+                            <input type="checkbox" checked class="peer sr-only quiz-selector" data-filename="${filename}">
+                            <div class="w-5 h-5 rounded border-2 border-outline-variant bg-surface-container-high peer-checked:bg-secondary-fixed peer-checked:border-secondary-fixed flex items-center justify-center transition-all duration-300 peer-checked:shadow-[0_0_12px_rgba(206,233,182,0.5)]">
+                                <div class="w-2 h-2 rounded-full bg-surface-dim opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                            </div>
+                        </label>
+                        <span class="material-symbols-outlined flex-shrink-0 text-tertiary-fixed text-xl">description</span>
+                        <span class="font-body-md text-on-surface text-sm truncate" title="${displayName}">${displayName}</span>
+                    </div>
+                    <button class="delete-single-btn p-1 flex-shrink-0 text-on-surface-variant hover:text-error transition-colors cursor-pointer mr-1" data-filename="${filename}" title="Delete file">
+                        <span class="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                `;
+                
+                syllabusList.appendChild(item);
+                
+                // Attach delete event
+                item.querySelector('.delete-single-btn').addEventListener('click', () => deleteSingleSyllabus(filename));
+            }
+
+            async function deleteSingleSyllabus(filename) {
+                if(!confirm('Delete this file from your Neural Memory?')) return;
+                
+                const item = document.getElementById(`file-${filename}`);
+                if(item) item.style.opacity = '0.5';
+                
+                try {
+                    const response = await fetch('/api/delete-single-syllabus', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filename })
+                    });
+                    
+                    const result = await response.json();
+                    if(response.ok && result.success) {
+                        if(item) item.remove();
+                        checkEmptyList();
+                    } else {
+                        alert('Failed to delete file: ' + result.error);
+                        if(item) item.style.opacity = '1';
+                    }
+                } catch(e) {
+                    alert('An error occurred while deleting.');
+                    if(item) item.style.opacity = '1';
+                }
+            }
+            
+            function checkEmptyList() {
+                const items = syllabusList.querySelectorAll('.flex.items-center.justify-between');
+                if(items.length === 0) {
+                    noFilesMsg.classList.remove('hidden');
+                    statusLabel.textContent = 'Status: No Syllabus Synced';
+                    statusLabel.classList.remove('text-secondary-fixed');
+                    statusLabel.classList.add('text-on-surface-variant');
+                }
+            }
+
+            // Master Clear Logic
+            clearMemoryBtn.addEventListener('click', async () => {
+                if (!confirm('Are you sure you want to wipe your ENTIRE Neural Memory? This will delete all uploaded syllabus knowledge.')) return;
+
+                clearMemoryBtn.disabled = true;
+                clearMemoryBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+                try {
+                    const response = await fetch('/api/delete-syllabus', { method: 'POST' });
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        // Remove all DOM elements
+                        const items = syllabusList.querySelectorAll('.flex.items-center.justify-between');
+                        items.forEach(item => item.remove());
+                        checkEmptyList();
+                        
+                        successMsg.classList.add('hidden');
+                        fileInput.value = '';
+                        alert('Neural Memory successfully wiped.');
+                    } else {
+                        alert('Clear Memory failed: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Error clearing memory:', error);
+                    alert('An error occurred while wiping memory.');
+                } finally {
+                    clearMemoryBtn.disabled = false;
+                    clearMemoryBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+
+            // Initialize
+            fetchSyllabuses();
         });
     </script>
 </body>
